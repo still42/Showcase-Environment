@@ -74,3 +74,19 @@ module web 'templates/webserver.bicep' = {
     subnetId: vnetUpdate.outputs.subnetId
   }
 }
+
+module mgmt 'templates/managementserver.bicep' = {
+  name: 'mgmt'
+  dependsOn: [
+    dc, nsg, vnet, vnetUpdate
+  ]
+  params: {
+    _artifactsLocation: _artifactsLocation 
+    _artifactsLocationSasToken: _artifactsLocationSasToken
+    adminPassword: adminPassword
+    adminUsername: adminUsername
+    domainName: domainName
+    location: location
+    subnetId: vnetUpdate.outputs.subnetId
+  }
+}
