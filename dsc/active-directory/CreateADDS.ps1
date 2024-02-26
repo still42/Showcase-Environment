@@ -31,7 +31,7 @@
             Ensure  = "Present"
         }
 
-        Script GuestAgent {
+        Script 'GuestAgent' {
             SetScript = {
                 Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\WindowsAzureGuestAgent' -Name DependOnService -Type MultiString -Value DNS
                 Write-Verbose -Verbose "GuestAgent depends on DNS"
@@ -73,6 +73,12 @@
             SafemodeAdministratorPassword = $SafeModePassword
             ForestMode                    = 'WinThreshold'
             DependsOn                     = "[WindowsFeature]ADDS"
+        }
+
+        WaitForADDomain 'ntwrk.com'
+        {
+            DomainName             = $Domainname
+            PsDscRunAsCredential   = $Credential
         }
 
     }
