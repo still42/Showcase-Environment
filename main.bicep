@@ -51,7 +51,7 @@ module dc 'templates/domaincontroller.bicep' = {
 module vnetUpdate 'templates/virtual-network-update.bicep' = {
   name: 'vnetUpdate'
   dependsOn: [
-    dc
+    dc, nsg, vnet
   ]
   params: {
     location: location
@@ -61,6 +61,9 @@ module vnetUpdate 'templates/virtual-network-update.bicep' = {
 
 module web 'templates/webserver.bicep' = {
   name: 'web'
+  dependsOn: [
+    dc, nsg, vnet, vnetUpdate
+  ]
   params: {
     _artifactsLocation: _artifactsLocation 
     _artifactsLocationSasToken: _artifactsLocationSasToken
