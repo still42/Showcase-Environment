@@ -14,7 +14,7 @@ param _artifactsLocation string = deployment().properties.templateLink.uri
 @secure()
 param _artifactsLocationSasToken string = ''
 
-module networkSecurityGroup 'templates/network-security-group.bicep' = {
+module nsg 'templates/network-security-group.bicep' = {
   name: 'nsg'
   params: {
     location: location 
@@ -23,14 +23,20 @@ module networkSecurityGroup 'templates/network-security-group.bicep' = {
 
 module vnet 'templates/virtual-network.bicep' = {
   name: 'vnet'
+  dependsOn: [
+    nsg
+  ]
   params: {
     location: location
-    nsgId: networkSecurityGroup.outputs.nsgId
+    nsgId: nsg.outputs.nsgId
   }
 }
 
 module dc 'templates/domaincontroller.bicep' = {
   name: 'dc'
+  dependsOn: [
+    vnet
+  ]
   params: {
     _artifactsLocation: _artifactsLocation 
     _artifactsLocationSasToken: _artifactsLocationSasToken
@@ -49,7 +55,7 @@ module vnetUpdate 'templates/virtual-network-update.bicep' = {
   ]
   params: {
     location: location
-    nsgId: networkSecurityGroup.outputs.nsgId
+    nsgId: nsg.outputs.nsgId
   }
 }
 
