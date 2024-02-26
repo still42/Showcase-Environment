@@ -2,9 +2,9 @@ targetScope = 'resourceGroup'
 
 param location string
 
-param domainName string
+param domainName string = 'ntwrk.com'
 
-param adminUsername string
+param adminUsername string = 'domainadmin'
 
 @secure()
 param adminPassword string
@@ -100,5 +100,18 @@ resource vnetUpdate 'Microsoft.Network/virtualNetworks@2023-09-01' = {
         '10.0.0.10'
       ]
     }
+  }
+}
+
+module web 'templates/webserver.bicep' = {
+  name: 'web'
+  params: {
+    _artifactsLocation: _artifactsLocation 
+    _artifactsLocationSasToken: _artifactsLocationSasToken
+    adminPassword: adminPassword
+    adminUsername: adminUsername
+    domainName: domainName
+    location: location
+    subnetId: vnetUpdate.properties.subnets[0].id
   }
 }
