@@ -44,6 +44,9 @@ module dc 'templates/domaincontroller.bicep' = {
 
 module vnetUpdate 'templates/virtual-network-update.bicep' = {
   name: 'vnetUpdate'
+  dependsOn: [
+    dc
+  ]
   params: {
     location: location
     nsgId: networkSecurityGroup.outputs.nsgId

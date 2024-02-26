@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.25.53.49325",
-      "templateHash": "4852784939372871307"
+      "templateHash": "8369200165085687789"
     }
   },
   "parameters": {
@@ -420,6 +420,7 @@
         }
       },
       "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'dc')]",
         "[resourceId('Microsoft.Resources/deployments', 'nsg')]"
       ]
     },
