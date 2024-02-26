@@ -1,6 +1,6 @@
 targetScope = 'resourceGroup'
 
-param location string
+param location string = 'westeurope'
 
 param domainName string = 'ntwrk.com'
 
@@ -14,48 +14,18 @@ param _artifactsLocation string = deployment().properties.templateLink.uri
 @secure()
 param _artifactsLocationSasToken string = ''
 
-resource nsg 'Microsoft.Network/networkSecurityGroups@2023-09-01' = {
-  name: 'vnet-nsg'
-  location: location
-  properties: {
-    securityRules: [
-      {
-        name: 'default'
-        properties: {
-          access: 'Allow'
-          direction: 'Inbound'
-          priority: 100
-          sourceAddressPrefix: '*'
-          destinationAddressPrefix: '*'
-          sourcePortRange: '*'
-          destinationPortRange: '3389'
-          protocol: 'Tcp'
-        }
-      }
-    ]
+module networkSecurityGroup 'templates/network-security-group.bicep' = {
+  name: 'nsg'
+  params: {
+    location: location 
   }
 }
 
-resource vnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
+module vnet 'templates/virtual-network.bicep' = {
   name: 'vnet'
-  location: location
-  properties: {
-    addressSpace: {
-      addressPrefixes: [
-        '10.0.0.0/24'
-      ]
-    }
-    subnets: [
-      {
-        name: 'subnet'
-        properties: {
-          addressPrefix: '10.0.0.0/24'
-          networkSecurityGroup: {
-            id: nsg.id
-          }
-        }
-      }
-    ]
+  params: {
+    location: location
+    nsgId: networkSecurityGroup.outputs.nsgId
   }
 }
 
@@ -68,38 +38,15 @@ module dc 'templates/domaincontroller.bicep' = {
     adminUsername: adminUsername
     domainName: domainName
     location: location
-    subnetId: vnet.properties.subnets[0].id
+    subnetId: vnet.outputs.subnetId
   }
 }
 
-resource vnetUpdate 'Microsoft.Network/virtualNetworks@2023-09-01' = {
+module vnetUpdate 'templates/virtual-network-update.bicep' = {
   name: 'vnetUpdate'
-  location: location
-  dependsOn: [
-    dc
-  ]
-  properties: {
-    addressSpace: {
-      addressPrefixes: [
-        '10.0.0.0/24'
-      ]
-    }
-    subnets: [
-      {
-        name: 'subnet'
-        properties: {
-          addressPrefix: '10.0.0.0/24'
-          networkSecurityGroup: {
-            id: nsg.id
-          }
-        }
-      }
-    ]
-    dhcpOptions: {
-      dnsServers: [
-        '10.0.0.10'
-      ]
-    }
+  params: {
+    location: location
+    nsgId: networkSecurityGroup.outputs.nsgId
   }
 }
 
@@ -112,6 +59,6 @@ module web 'templates/webserver.bicep' = {
     adminUsername: adminUsername
     domainName: domainName
     location: location
-    subnetId: vnetUpdate.properties.subnets[0].id
+    subnetId: vnetUpdate.outputs.subnetId
   }
 }

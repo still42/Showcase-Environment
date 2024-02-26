@@ -5,12 +5,13 @@
     "_generator": {
       "name": "bicep",
       "version": "0.25.53.49325",
-      "templateHash": "9384472496447526523"
+      "templateHash": "4852784939372871307"
     }
   },
   "parameters": {
     "location": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": "westeurope"
     },
     "domainName": {
       "type": "string",
@@ -34,86 +35,139 @@
   },
   "resources": [
     {
-      "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2023-09-01",
-      "name": "vnet-nsg",
-      "location": "[parameters('location')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "nsg",
       "properties": {
-        "securityRules": [
-          {
-            "name": "default",
-            "properties": {
-              "access": "Allow",
-              "direction": "Inbound",
-              "priority": 100,
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "sourcePortRange": "*",
-              "destinationPortRange": "3389",
-              "protocol": "Tcp"
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.25.53.49325",
+              "templateHash": "9425909887002471702"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-09-01",
+              "name": "vnet-nsg",
+              "location": "[parameters('location')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "default",
+                    "properties": {
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "priority": 100,
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "3389",
+                      "protocol": "Tcp"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "outputs": {
+            "nsgId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/networkSecurityGroups', 'vnet-nsg')]"
             }
           }
-        ]
+        }
       }
     },
     {
-      "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2023-09-01",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
       "name": "vnet",
-      "location": "[parameters('location')]",
       "properties": {
-        "addressSpace": {
-          "addressPrefixes": [
-            "10.0.0.0/24"
-          ]
+        "expressionEvaluationOptions": {
+          "scope": "inner"
         },
-        "subnets": [
-          {
-            "name": "subnet",
-            "properties": {
-              "addressPrefix": "10.0.0.0/24",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'vnet-nsg')]"
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "nsgId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'nsg'), '2022-09-01').outputs.nsgId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.25.53.49325",
+              "templateHash": "9515863232190486488"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "nsgId": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-09-01",
+              "name": "vnet",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "10.0.0.0/24"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "subnet",
+                    "properties": {
+                      "addressPrefix": "10.0.0.0/24",
+                      "networkSecurityGroup": {
+                        "id": "[parameters('nsgId')]"
+                      }
+                    }
+                  }
+                ]
               }
             }
-          }
-        ]
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', 'vnet-nsg')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2023-09-01",
-      "name": "vnetUpdate",
-      "location": "[parameters('location')]",
-      "properties": {
-        "addressSpace": {
-          "addressPrefixes": [
-            "10.0.0.0/24"
-          ]
-        },
-        "subnets": [
-          {
-            "name": "subnet",
-            "properties": {
-              "addressPrefix": "10.0.0.0/24",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'vnet-nsg')]"
-              }
+          ],
+          "outputs": {
+            "subnetId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'vnet'), '2023-09-01').subnets[0].id]"
             }
           }
-        ],
-        "dhcpOptions": {
-          "dnsServers": [
-            "10.0.0.10"
-          ]
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'dc')]",
-        "[resourceId('Microsoft.Network/networkSecurityGroups', 'vnet-nsg')]"
+        "[resourceId('Microsoft.Resources/deployments', 'nsg')]"
       ]
     },
     {
@@ -145,7 +199,7 @@
             "value": "[parameters('location')]"
           },
           "subnetId": {
-            "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'vnet'), '2023-09-01').subnets[0].id]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'vnet'), '2022-09-01').outputs.subnetId.value]"
           }
         },
         "template": {
@@ -288,7 +342,85 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks', 'vnet')]"
+        "[resourceId('Microsoft.Resources/deployments', 'vnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "vnetUpdate",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "nsgId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'nsg'), '2022-09-01').outputs.nsgId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.25.53.49325",
+              "templateHash": "3846853421200562309"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "nsgId": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-09-01",
+              "name": "vnet",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "10.0.0.0/24"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "subnet",
+                    "properties": {
+                      "addressPrefix": "10.0.0.0/24",
+                      "networkSecurityGroup": {
+                        "id": "[parameters('nsgId')]"
+                      }
+                    }
+                  }
+                ],
+                "dhcpOptions": {
+                  "dnsServers": [
+                    "10.0.0.10"
+                  ]
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "subnetId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'vnet'), '2023-09-01').subnets[0].id]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'nsg')]"
       ]
     },
     {
@@ -320,7 +452,7 @@
             "value": "[parameters('location')]"
           },
           "subnetId": {
-            "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'vnetUpdate'), '2023-09-01').subnets[0].id]"
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'vnetUpdate'), '2022-09-01').outputs.subnetId.value]"
           }
         },
         "template": {
@@ -460,7 +592,7 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks', 'vnetUpdate')]"
+        "[resourceId('Microsoft.Resources/deployments', 'vnetUpdate')]"
       ]
     }
   ]
